@@ -178,7 +178,7 @@ def chuliJilu():
                 ili=0
                 while ili< li:                    
                     if spot[ihi,ili]=="":###把空的换成"0"
-                        spotdata[ihi,ili]=0
+                        spotdata[ihi,ili]=int(0)##矩阵中只要有小数，整数也会转换成小数
                     else:
                         spotdata[ihi,ili]=float(spot[ihi,ili])
                     ili +=1
@@ -380,9 +380,9 @@ def wrtthreeandsix():###获取最终数据
         WZLXHZarr.append(i)
     WZLXHZarr=np.array(WZLXHZarr)
     ###总结数据
-    Zxqdnum=len(XQDHZarr[:,4])
-    Zxqdzl=round(sum(XQDHZarr[:,4]),4)
-    Zxqdtj=round(sum(XQDHZarr[:,5]),4)
+    Zxqdnum=len(XQDHZarr[:,0])
+    Zxqdzl=round(sum(XQDHZarr[:,-2]),4)
+    Zxqdtj=round(sum(XQDHZarr[:,-1]),4)
     Zgylzl=round(sum(wzlxHZ[3,:]*wzlxHZ[0,:]),4)#供应量重量
     Zgyltj=round(sum(wzlxHZ[3,:]*wzlxHZ[1,:]),4)#供应量体积
     Zfplzl=round(sum(wzlxHZ[4,:]*wzlxHZ[0,:]),4)#分配量重量
@@ -1046,7 +1046,7 @@ def abc(Zfplzl,Zfpltj,Zclzl,Zcltj,gongpingxishu):###Zclzl,Zcltj是数组
 
 def diyicikefenpei(XQDHZarr,WZLXHZarr):##第一次可分配
     xishu=WZLXHZarr[-1]
-    xuqiu=XQDHZarr[:,:4]
+    xuqiu=XQDHZarr[:,:-2]
     danweizl=WZLXHZarr[0,:]
     danweitj=WZLXHZarr[1,:]
     yicifenpei=[]
@@ -1067,8 +1067,8 @@ def diyicifenpeiyuzhi(Diyicifenpeiarr,Fenpeixishu):
     for idx,x in enumerate(Fenpeixishu):
         zlxishu=x[0]
         tjxishu=x[1]
-        zlxulie=Diyicifenpeiarr[:,4]
-        tjxulie=Diyicifenpeiarr[:,5]
+        zlxulie=Diyicifenpeiarr[:,-2]
+        tjxulie=Diyicifenpeiarr[:,-1]
         zl=zlxulie*zlxishu
         tj=tjxulie*tjxishu
         d=np.transpose([zl,tj])
@@ -1233,12 +1233,16 @@ def printusedmayi(Mayipipei,Mayizidian):
     for idx,x in enumerate(Mayipipei):
         print("第",idx+1,"次车辆类型安排：")
         mayi=usedmayi(Mayipipei[idx][0],Mayizidian[idx])
-        print(mayi)
+        mayi.sort(key=takefirst)
+        for m in mayi:
+            print(m)
         Usedmayi.append(mayi)
     
     print("*"*10,"第三步：选择蚂蚁组合（结束）","*"*10)
     print("="*100)
     return Usedmayi
+def takefirst(elem):
+    return elem[0]
         
 def usedmayi(Mayixuhao,Mayizidian):
     Usedmayi=[]
@@ -1266,7 +1270,7 @@ def zxqdpsarr(XQDHZarr,mayixuhao,Diyicifenpeiyuzhi,spotandtime,minRouteJH):
     ###########重量阈值、体积阈值、配送蚂蚁序号、配送蚂蚁类型号、配送路线序号、配送时间、满意度
     ZxqdPSarr=np.zeros(tuple(np.array(np.shape(XQDHZarr))+np.array((0,7))))
     #####为了得到ZxqdPSarr
-    ##从第7列开始：
+    ##从第xx列开始：
     #####重量阈值、体积阈值、配送蚂蚁序号、配送蚂蚁类型号、配送路线序号、配送时间、满意度
     routenumber=minroutenumber(minRouteJH)
 ##    print(routenumber)
@@ -1274,27 +1278,28 @@ def zxqdpsarr(XQDHZarr,mayixuhao,Diyicifenpeiyuzhi,spotandtime,minRouteJH):
     xqdtjyuzhi=Diyicifenpeiyuzhi[:,1]###需求点体积阈值
     lenxqd=len(xqdtjyuzhi)
     il=0
+    lxqd=len(XQDHZarr[0,:])
     while il <lenxqd:
-        ZxqdPSarr[il,6]=round(xqdzlyuzhi[il],3)###第7列：重量阈值
-        ZxqdPSarr[il,7]=round(xqdtjyuzhi[il],3)###第8列：体积阈值
-        ###第9列：配送蚂蚁序号和路线序号一样
+        ZxqdPSarr[il,lxqd]=round(xqdzlyuzhi[il],3)###第lxqd+1列：重量阈值
+        ZxqdPSarr[il,lxqd+1]=round(xqdtjyuzhi[il],3)###第+2列：体积阈值
+        ###第+3列：配送蚂蚁序号和路线序号一样
         
-        ###第10列：配送蚂蚁类型号
+        ###第+4列：配送蚂蚁类型号
         
-        ###第11列：配送路线序号
-        ZxqdPSarr[il,10]=routenumber[il]
-        ###第12列：配送时间
-        ZxqdPSarr[il,11]=spotandtime[il]
+        ###第+5列：配送路线序号
+        ZxqdPSarr[il,lxqd+4]=routenumber[il]
+        ###第+6列：配送时间
+        ZxqdPSarr[il,lxqd+5]=spotandtime[il]
         il+=1
-    ###第9列：配送蚂蚁序号        
-    ###第10列：配送蚂蚁类型号
+    ###第+3列：配送蚂蚁序号        
+    ###第+4列：配送蚂蚁类型号
     for i in mayixuhao:
         dian=i[1][0]
         for j in dian:
-            ###第9列：配送蚂蚁序号
-            ZxqdPSarr[j-1,8]=i[0][0]
-            ###第10列：配送蚂蚁类型号
-            ZxqdPSarr[j-1,9]=i[0][1]
+            ###第+3列：配送蚂蚁序号
+            ZxqdPSarr[j-1,lxqd+2]=i[0][0]
+            ###第+4列：配送蚂蚁类型号
+            ZxqdPSarr[j-1,lxqd+3]=i[0][1]
     return ZxqdPSarr
 ##############################总配送表函数——结束############################
 
@@ -1494,7 +1499,7 @@ def duogesptsacdarr(CLLXarr,SPTSACDarr):
 ##################################################################
 ###第一次配送前修改为可分配数量
 def xiugaikefenpeishu(DuogeSPTS,Diyicifenpeiarr):
-    fenpeishu=Diyicifenpeiarr[:,:4]
+    fenpeishu=Diyicifenpeiarr[:,:-2]
     for idx,x in enumerate(DuogeSPTS):
         for idy,y in enumerate(x):
             y[:,2]=fenpeishu[idy]
@@ -1526,11 +1531,11 @@ def diyibufenpei(SPTSACDarr,Myxuhaofenkai,ZxqdPSarr,WZLXHZarr):
             ###物资权重从高到底排序
             wuzishunxu=sorted(wuzishunxu,key=lambda x:-x[2])
             ###点的阈值满足
-            
-            yixuantiji=sum(ZxqdPSarr[dn-1,:len(WZLXHZarr[1,:])]*WZLXHZarr[1,:])
-            yixuanzhongliang=sum(ZxqdPSarr[dn-1,:len(WZLXHZarr[0,:])]*WZLXHZarr[0,:])
-            tijiyuzhi=ZxqdPSarr[dn-1,7]-yixuantiji
-            zhongliangyuzhi=ZxqdPSarr[dn-1,6]-yixuanzhongliang
+            lwz=len(WZLXHZarr[1,:])
+            yixuantiji=sum(ZxqdPSarr[dn-1,:lwz]*WZLXHZarr[1,:])
+            yixuanzhongliang=sum(ZxqdPSarr[dn-1,:lwz]*WZLXHZarr[0,:])
+            tijiyuzhi=ZxqdPSarr[dn-1,lwz+3]-yixuantiji
+            zhongliangyuzhi=ZxqdPSarr[dn-1,lwz+2]-yixuanzhongliang
             if tijiyuzhi<=0 or zhongliangyuzhi<=0:
                 manzuyizhi=True
                 break###该点的阈值已经满足,安排下一个点
@@ -1561,9 +1566,10 @@ def diyibufenpei(SPTSACDarr,Myxuhaofenkai,ZxqdPSarr,WZLXHZarr):
                     else:###情况2.2.
                         break###退出该点的物资分配，即安排下一只蚂蚁
     ###更新配送表中的体积和重量
+    lwz=len(WZLXHZarr[0,:])#物资个数
     for idx,x in enumerate(ZxqdPSarr):
-        ZxqdPSarr[idx,5]=sum(ZxqdPSarr[idx,:len(WZLXHZarr[1,:])]*WZLXHZarr[1,:])
-        ZxqdPSarr[idx,4]=sum(ZxqdPSarr[idx,:len(WZLXHZarr[0,:])]*WZLXHZarr[0,:])
+        ZxqdPSarr[idx,lwz+1]=sum(ZxqdPSarr[idx,:lwz]*WZLXHZarr[1,:])##体积
+        ZxqdPSarr[idx,lwz]=sum(ZxqdPSarr[idx,:lwz]*WZLXHZarr[0,:])##重量
     return SPTSACDarr   
 
 def yicifenpei(shengyutiji,shengyuzhongliang,wz,ZxqdPSarr,SPTSACDarr,iche,cheshu,wuzifenwan,Myxuhaofenkai,idx,chexingwuzi,WZLXHZarr,manzuyizhi):
@@ -1575,15 +1581,16 @@ def yicifenpei(shengyutiji,shengyuzhongliang,wz,ZxqdPSarr,SPTSACDarr,iche,cheshu
     shu2=int(shengyuzhongliang/Dianarr[wuzipos,0])##重量数
     chezai_shuliang=min(shu1,shu2)
     ##点的阈值，在体积阈值和重量阈值的限制下的可选物资数量，向上取整
-    yixuantiji=sum(ZxqdPSarr[dianpos,:len(WZLXHZarr[1,:])]*WZLXHZarr[1,:])
-    yixuanzhongliang=sum(ZxqdPSarr[dianpos,:len(WZLXHZarr[0,:])]*WZLXHZarr[0,:])
-    tijiyuzhi=ZxqdPSarr[dianpos,7]-yixuantiji
-    zhongliangyuzhi=ZxqdPSarr[dianpos,6]-yixuanzhongliang
+    lwz=len(WZLXHZarr[0,:])#物资个数
+    yixuantiji=sum(ZxqdPSarr[dianpos,:lwz]*WZLXHZarr[1,:])
+    yixuanzhongliang=sum(ZxqdPSarr[dianpos,:lwz]*WZLXHZarr[0,:])
+    tijiyuzhi=ZxqdPSarr[dianpos,lwz+3]-yixuantiji
+    zhongliangyuzhi=ZxqdPSarr[dianpos,lwz+2]-yixuanzhongliang
     tijishu=math.ceil(tijiyuzhi/Dianarr[wuzipos,1])
     zhongliangshu=math.ceil(zhongliangyuzhi/Dianarr[wuzipos,0])
     dian_shuliang=min(tijishu,zhongliangshu)
     ###点的物资待配送数量
-    daisong_shuliang=Dianarr[wuzipos,2]-Dianarr[wuzipos,3]
+    daisong_shuliang=int(Dianarr[wuzipos,2]-Dianarr[wuzipos,3])
     if chezai_shuliang >=daisong_shuliang:###车辆能够满足待配送物资
         if daisong_shuliang<dian_shuliang:###未达到阈值
             ###该物资完全配送
@@ -1665,8 +1672,8 @@ def diyicifenpeishengyu(ZxqdPSarr,WZLXHZarr):
     kefenpei=WZLXHZarr[4,:]
     for idx,x in enumerate(ZxqdPSarr):
         thisx=sum(ZxqdPSarr[idx][:,:len(kefenpei)])
-        thx=kefenpei-thisx
-        fenpei.append(list(thx))
+        thx=[int(i-j) for i,j in zip(kefenpei,thisx)]
+        fenpei.append(thx)
     return fenpei                            
 ##################################################################
 
@@ -1724,9 +1731,10 @@ def dierbufenpei(SPTSACDarr,Myxuhaofenkai,ZxqdPSarr,WZLXHZarr,Fenpeishengyu):
             else:###情况2
                 break###退出该点的物资分配，即安排下一只蚂蚁
     ###更新配送表中的体积和重量
+    lwz=len(WZLXHZarr[1,:])
     for idx,x in enumerate(ZxqdPSarr):
-        ZxqdPSarr[idx,5]=sum(ZxqdPSarr[idx,:len(WZLXHZarr[1,:])]*WZLXHZarr[1,:])
-        ZxqdPSarr[idx,4]=sum(ZxqdPSarr[idx,:len(WZLXHZarr[0,:])]*WZLXHZarr[0,:])
+        ZxqdPSarr[idx,lwz+1]=sum(ZxqdPSarr[idx,:lwz]*WZLXHZarr[1,:])
+        ZxqdPSarr[idx,lwz]=sum(ZxqdPSarr[idx,:lwz]*WZLXHZarr[0,:])
     return SPTSACDarr
 def yicifenpei_2(shengyutiji,shengyuzhongliang,wz,ZxqdPSarr,SPTSACDarr,iche,cheshu,wuzifenwan,Myxuhaofenkai,idx,chexingwuzi,WZLXHZarr,Fenpeishengyu):
     dianpos=wz[0]-1
@@ -1737,7 +1745,7 @@ def yicifenpei_2(shengyutiji,shengyuzhongliang,wz,ZxqdPSarr,SPTSACDarr,iche,ches
     shu2=int(shengyuzhongliang/Dianarr[wuzipos,0])##重量数
     chezai_shuliang=min(shu1,shu2)
     ###点的物资待配送数量，受到可分配物资的制约
-    daisong_shuliang=min(Dianarr[wuzipos,2]-Dianarr[wuzipos,3],Fenpeishengyu[wuzipos])
+    daisong_shuliang=int(min(Dianarr[wuzipos,2]-Dianarr[wuzipos,3],Fenpeishengyu[wuzipos]))
     if chezai_shuliang >=daisong_shuliang:###车辆能够满足待配送物资
         ###该物资完全配送
         ZxqdPSarr[dianpos,wuzipos]+=daisong_shuliang
@@ -1785,18 +1793,21 @@ def yicifenpei_2(shengyutiji,shengyuzhongliang,wz,ZxqdPSarr,SPTSACDarr,iche,ches
     
 ###报告初次分配的信息
 ##################################################################
-def diyicifenpeizongjie(ZxqdPSarr,Myxuhaofenkai,Fenpeishengyu):
+def diyicifenpeizongjie(ZxqdPSarr,Myxuhaofenkai,Fenpeishengyu,WZLXHZarr):
     wuzishu=len(Fenpeishengyu[0])
     print("="*100)
     print("*"*10,"第四步：初次分配（开始）","*"*10)
     for idx,x in enumerate(ZxqdPSarr):
         print('-'*50)
         print("按方案",idx+1,"分配,分配矩阵为：")
-        print("下表标题：1物资1配送数量","，2物资2配送数量","，3物资配送3数量","，4物资4配送数量",'，5配送重量',"，6配送体积",'，7重量阈值','，8体积阈值','，9蚂蚁序号','，10蚂蚁类型号','，11路线序号','，12等待时间(min)','，13满意度(暂未定义)')
+        print(" 下表标题：1物资1配送数量","，2物资2配送数量","，3物资配送3数量","，4物资4配送数量",'，5配送重量',"，6配送体积",'，7重量阈值','，8体积阈值','，9蚂蚁序号','，10蚂蚁类型号','，11路线序号','，12等待时间(min)','，13满意度(暂未定义)')
         print(ZxqdPSarr[idx])
-        print("按方案",idx+1,"分配,装车物资类型和个数为：")
-        print("下表元素格式：[[蚂蚁序号,蚂蚁类型号][[需求点号],[[车型1,[车型1的重量，车型1的体积],[车型1装载物资1的个数...]][车型2...]...]]]")
-        print(Myxuhaofenkai[idx])
+        print("")
+        print("按方案",idx+1,"分配,装车情况为：")
+##        print("下表元素格式：[[蚂蚁序号,蚂蚁类型号][[需求点号],[[车型1,[车型1的重量，车型1的体积],[车型1装载物资1的个数...]][车型2...]...]]]")
+##        print(Myxuhaofenkai[idx])
+        prntmayishengyu(Myxuhaofenkai[idx],WZLXHZarr)
+        print("")
         print("按方案",idx+1,"分配后,物资1到物资",wuzishu,"的剩余可分配量")
         print(Fenpeishengyu[idx])
     print("*"*10,"第四步：初次分配（结束）","*"*10)
@@ -1833,32 +1844,60 @@ def printzongjie(DuogeSPTS,ZxqdPSarr,Myxuhaofenkai,Zxqdnum,Zclnum,Zxqdzl,Zxqdtj,
         print("方案",li+1,"：总配送重量：",round(PShz[li][wuzishu],4),"总配送体积：",round(PShz[li][wuzishu+1],4))
         li+=1
     print("需求点物资1到物资",wuzishu,"的需求量")
-    print(WZLXHZarr[2,:])
+    xqllist=[int(i) for i in WZLXHZarr[2,:]]
+    print(xqllist)
     print("配送中心物资1到物资",wuzishu,"的供应量")
-    print(WZLXHZarr[3,:])
+    gyllist=[int(i) for i in WZLXHZarr[3,:]]
+    print(gyllist)
     print("进行分配时物资1到物资",wuzishu,"的可分配量")
-    print(WZLXHZarr[4,:])
+    kfplist=[int(i) for i in WZLXHZarr[4,:]]
+    print(kfplist)
     for idx,x in enumerate(Fenpeishengyu):
+        print("")
         print("按方案",idx+1,"分配,物资1到物资",wuzishu,"的实际分配量")
-        print(PShz[idx][:wuzishu])
+        sjfpl=[int(i) for i in PShz[idx][:wuzishu]]
+        print(' ',sjfpl)
         print("按方案",idx+1,"分配后,物资1到物资",wuzishu,"的剩余可分配量")
-        print(Fenpeishengyu[idx])
+        syfpl=[int(i) for i in Fenpeishengyu[idx]]
+        print(syfpl)
     print('-'*50)
     print('-'*50)
     print('*'*5,'具体方案','*'*5)
     for idx,x in enumerate(ZxqdPSarr):
+        
         print("按方案",idx+1,"分配,分配矩阵为：")
-        print("下表标题：1物资1配送数量","，2物资2配送数量","，3物资配送3数量","，4物资4配送数量",'，5配送重量',"，6配送体积",'，7重量阈值','，8体积阈值','，9蚂蚁序号','，10蚂蚁类型号','，11路线序号','，12等待时间(min)','，13满意度(暂未定义)')
+        print(" 下表标题：1物资1配送数量","，2物资2配送数量","，3物资配送3数量","，4物资4配送数量",'，5配送重量',"，6配送体积",'，7重量阈值','，8体积阈值','，9蚂蚁序号','，10蚂蚁类型号','，11路线序号','，12等待时间(min)','，13满意度(暂未定义)')
         print(ZxqdPSarr[idx])
-        print("按方案",idx+1,"分配,装车物资类型和个数为：")
-        print("下表元素格式：[[蚂蚁序号,蚂蚁类型号][[需求点号],[[车型1,[车型1的重量，车型1的体积],[车型1装载物资1的个数...]][车型2...]...]]]")
-        print(Myxuhaofenkai[idx])
+        print("")
+        print("按方案",idx+1,"分配,装车情况为：")
+##        print("下表元素格式：[[蚂蚁序号,蚂蚁类型号][[需求点号],[[车型1,[车型1的重量，车型1的体积],[车型1装载物资1的个数...]][车型2...]...]]]")
+##        print(Myxuhaofenkai[idx])
+        prntmayishengyu(Myxuhaofenkai[idx],WZLXHZarr)
+        print("")
         print("按方案",idx+1,"分配,需求点的需求矩阵为：")
-        print("下表的标题为：单位重量，单位体积，需求个数，配送个数，物资权重")
+        print(" 下表的标题为：单位重量，单位体积，需求个数，配送个数，物资权重")
         print(DuogeSPTS[idx])
+        print("")
     print("*"*10,"第五步：最终分配（结束）","*"*10)
     print("="*100)
-    
+
+def prntmayishengyu(Myxuhaofenkai,WZLXHZarr):
+    danweizl=WZLXHZarr[0,:]
+    danweitj=WZLXHZarr[1,:]
+    for idx,x in enumerate(Myxuhaofenkai):
+        cheliang=x[1][1]
+        print(" 蚂蚁序号或路线号",x[0][0],"按顺序经过",x[1][0],'点，车辆的空间剩余情况和物资装载情况：')
+        for idy,y in enumerate(cheliang):
+            chex=y[0]
+            chexzltj=y[1]
+            shiyongzl=sum(y[2]*danweizl)
+            shiyongtj=sum(y[2]*danweitj)
+            shengyuzl=round(chexzltj[0]-shiyongzl)
+            shengyutj=round(chexzltj[1]-shiyongtj,2)
+##            if shengyuzl>0 and shengyutj>0:                
+            print('  ',chex,"剩余重量：",shengyuzl,"剩余体积：",shengyutj,'运送物资个数：',y[2])
+            
+        
         
 ##################################################################        
 ####
@@ -1912,7 +1951,7 @@ DuogeSPTS=diyibufp(DuogeSPTS,Myxuhaofenkai,ZxqdPSarr,WZLXHZarr)
 ###第一次分配剩余
 Fenpeishengyu=diyicifenpeishengyu(ZxqdPSarr,WZLXHZarr)
 ###报告初次分配的信息
-diyicifenpeizongjie(ZxqdPSarr,Myxuhaofenkai,Fenpeishengyu)
+diyicifenpeizongjie(ZxqdPSarr,Myxuhaofenkai,Fenpeishengyu,WZLXHZarr)
 DuogeSPTS=huifuxuqiuliang(DuogeSPTS,SPTSACDarr)
 ##print(DuogeSPTS)        
 ###第二次分配
