@@ -8,6 +8,7 @@ import random
 import matplotlib.pyplot as plt #绘制图像要用到的pyplot
 import itertools
 import math
+import copy
 ##取消科学计数法https://blog.csdn.net/Andrew_jdw/article/details/82350041
 np.set_printoptions(suppress=True)
 ###################################引入模块区域##################################################################
@@ -1114,16 +1115,19 @@ def chuliluxianyuzhi(luxian,yuzhi):
 ############################################################
 def mayipipei(Mayiyudian,Mayizidian,CLLXtypenum,Fenpeixishu):
     Mayipipei=[]
+    ###非常重要深拷贝
+    CLLXtypenum=copy.deepcopy(CLLXtypenum)##深拷贝，参考https://www.runoob.com/w3cnote/python-understanding-dict-copy-shallow-or-deep.html
     for idx,x in enumerate(Fenpeixishu):
-        antijisuan=Fenpeixishu[idx][2]###按体积算
+##        antijisuan=Fenpeixishu[idx][2]###按体积算
         ###剩余车辆    
-        shengyucheliang=CLLXtypenum[idx]
+##        shengyucheliang=CLLXtypenum[idx]
     ##    print(shengyucheliang)
-        mayi=xuanmayi(antijisuan,Mayiyudian[idx],Mayizidian[idx],shengyucheliang)
+##        print("剩余车辆：/n",CLLXtypenum[idx])
+        mayi=xuanmayi(Fenpeixishu[idx][2],Mayiyudian[idx],Mayizidian[idx],CLLXtypenum[idx])
 ##        print(mayi)
         ###比以前多了后半部分
         shengyu=mayi[1]
-        mayi=jiaohuanmayi(mayi[0],antijisuan)
+        mayi=jiaohuanmayi(mayi[0],Fenpeixishu[idx][2])
         Mayipipei.append([mayi,shengyu])
     return Mayipipei
 ###交换蚂蚁
@@ -1174,7 +1178,7 @@ def xuanmayi(antijisuan,Mayiyudian,Mayizidian,shengyucheliang):
                     else:
                         pass                
             else:
-                if Mayizidian[zdi][0]<mayi[ima][1][0]:##比重量
+                if Mayizidian[zdi][0]<Mayiyudian[ima][1][0]:##比重量
                     pass
                 else:
                     ####检查剩余的车辆
@@ -1224,8 +1228,7 @@ def gengxinshengyucheliang(shengyucheliang,Mayizidianvals):
 ############################################################
 def printusedmayi(Mayipipei,Mayizidian):
     Usedmayi=[]
-    print("="*100)
-    print("*"*10,"第三步：选择蚂蚁组合（开始）","*"*10)
+    print('-'*50)
     print("蚂蚁类型信息([","蚂蚁类型号","，蚂蚁重量","，蚂蚁体积","，车型组合","])：")
     for idx,x in enumerate(Mayipipei):
         print("第",idx+1,"次车辆类型安排：")
@@ -1366,39 +1369,116 @@ def dian(minRouteJH):
     Dian=set(Dian)
     return Dian
 ##############################路线序号函数——结束############################
-###判断公平系数取值合理与否
+
+
+##################################################################    
+'''根据公平系数得到蚂蚁匹配'''
+def gpxsdaomayipipei(Zfplzl,Zfpltj,Zclzl,Zcltj,gongpingxishu,CLLXtypenum,CLLXtitl,CLLXarr,XQDHZarr,WZLXHZarr,TimeandRoute):
+    Fenpeixishu=abc(Zfplzl,Zfpltj,Zclzl,Zcltj,gongpingxishu)
+##    print(Fenpeixishu)
+    ###获取蚂蚁字典的数组##需要
+    Mayizidian=mygetmayizidian(CLLXtypenum,CLLXtitl,CLLXarr,Fenpeixishu)
+    ##print(Mayizidian)
+    ###获取第一次分配的矩阵。可以分配的数量
+    ##print("第一次可分配数量：")##需要
+    Diyicifenpeiarr=diyicikefenpei(XQDHZarr,WZLXHZarr)
+##    print(Diyicifenpeiarr)
+    ###获取第一次分配阈值。由体积阈值或者重量阈值确定的必须分配的数量
+    ##print("第一次分配阈值：")##需要
+    Diyicifenpeiyuzhi=diyicifenpeiyuzhi(Diyicifenpeiarr,Fenpeixishu)
+    ##print(Diyicifenpeiyuzhi)
+    ####获取第一次分配的路线阈值(蚂蚁与点)
+    Diyiciluxianyuzhi=luxianyuzhi(Diyicifenpeiyuzhi,TimeandRoute,Fenpeixishu)
+##    print(Diyiciluxianyuzhi)
+    ###第一次蚂蚁匹配##需要
+    Mayipipei=mayipipei(Diyiciluxianyuzhi,Mayizidian,CLLXtypenum,Fenpeixishu)
+##    print(Mayipipei)
+    return Mayizidian,Diyicifenpeiarr,Diyicifenpeiyuzhi,Mayipipei
 ##################################################################
-def gongpingxishuheli(Mayipipei,TimeandRoute):
-    heli=[]
-    print("!"*10,"请注意:根据下面提示调整公平系数，若合理则忽略","!"*10)
-    for idx,x in enumerate(Mayipipei):
-        print("第",idx+1,"次车辆类型安排：")
-        heli.append(panduangongpingxishuheli(Mayipipei[idx],TimeandRoute[idx]))
-        print("第",idx+1,"次车辆类型安排后，剩余车辆情况：")
-        print(Mayipipei[idx][1])
-    return heli
-def panduangongpingxishuheli(Mayipipei,TimeandRoute):###判断公平系数取值合理与否
-    heli=False
+
+###
+##################################################################
+'''判断公平系数取值合理与否，
+若不合理则更新公平系数并重新进行蚂蚁匹配,直到所有公平系数合理为止,
+返回最终合理的公平系数 '''
+def gongpingxishuheli(Zfplzl,Zfpltj,Zclzl,Zcltj,gongpingxishu,CLLXtypenum,CLLXtitl,CLLXarr,XQDHZarr,WZLXHZarr,TimeandRoute):
+    Mayizidian,Diyicifenpeiarr,Diyicifenpeiyuzhi,Mayipipei=[],[],[],[]
+    bianhua=0.1*np.ones(len(gongpingxishu))
+    diyicipanduan=[True for i in gongpingxishu]
+    heli=[False for i in gongpingxishu]###公平系数合理与否
+    zengda=[False for i in gongpingxishu]###是否增大（公平系数）
+    print("="*100)
+    print("*"*10,"第三步：选择蚂蚁组合（开始）","*"*10)
+    print('-'*50)
+    print("."*10,"正在寻找合适的公平系数","."*10)
+    while sum(heli)<len(gongpingxishu):###直到所有公平系数都合理才退出
+        print("当前的公平系数是：",gongpingxishu)
+        ###先根据公平系数得到蚂蚁匹配
+        Mayizidian,Diyicifenpeiarr,Diyicifenpeiyuzhi,Mayipipei=gpxsdaomayipipei(Zfplzl,Zfpltj,Zclzl,Zcltj,gongpingxishu,CLLXtypenum,CLLXtitl,CLLXarr,XQDHZarr,WZLXHZarr,TimeandRoute)
+##        print(Mayipipei)
+        ###得到公平系数是否合理
+        for idx,x in enumerate(Mayipipei):
+            print("第",idx+1,"次车辆类型安排：")
+            panduangongpingxishuheli(Mayipipei[idx],TimeandRoute[idx],gongpingxishu,bianhua,diyicipanduan,heli,zengda,idx)
+    ##        print("第",idx+1,"次车辆类型安排后，剩余车辆情况：")
+    ##        print(Mayipipei[idx][1])
+        ###不合理则重新安排蚂蚁
+    print('')    
+    print("找到合理的公平系数是：",gongpingxishu)
+    return gongpingxishu,Mayizidian,Diyicifenpeiarr,Diyicifenpeiyuzhi,Mayipipei
+'''panduangongpingxishuheli函数传入公平系数，返回公平系数是否合理
+其中涉及到更新公平系数的方法，简单来说公平系数如果不够或多了就变化0.1,如果接近合理值时变化幅度会在上一次基础上减半'''
+def panduangongpingxishuheli(Mayipipei,TimeandRoute,gongpingxishu,bianhua,diyicipanduan,heli,zengda,idx):###判断公平系数取值合理与否    
     if len(Mayipipei[0])==len(TimeandRoute[1]):
-        heli=True
+        heli[idx]=True
     else :
-        heli=False
+        heli[idx]=False
         print("公平系数过大，导致有",len(TimeandRoute[1])-len(Mayipipei[0]),"条路线没有分配到蚂蚁")
-        print("请减小公平系数后重试")
+        print("需要减小公平系数")
+        if diyicipanduan[idx]:
+            ###第一次判断，变化幅度为0.1，即变化幅度保持不变
+            pass            
+        else:###后续判断
+            if bianhua[idx]==.1:##上次变化是0.1
+                if zengda[idx]:##前一次增大
+                    bianhua[idx]*=.5###幅度减半
+                else:#前一次减小
+                    ###变化幅度为0.1，即变化幅度保持不变
+                    pass
+            else:##上次变化小于0.1
+                bianhua[idx]*=.5###幅度减半
+        diyicipanduan[idx]=False##用完了第一次判断
+        zengda[idx]=False###减小公平系数
+        gongpingxishu[idx]-=bianhua[idx]###更新下一次迭代使用的公平系数
         return heli
     shengyucheliang= Mayipipei[1]
     cheshu=shengyucheliang.values()
     zongcheshu=sum(list(cheshu))
     if zongcheshu>0:
-        heli=False
+        heli[idx]=False
         print("公平系数过小，导致有车辆未被分配")
         print(shengyucheliang)
-        print("请增大公平系数后重试")
+        print("需要增大公平系数")
+        if diyicipanduan[idx]:
+            ###第一次判断，变化幅度为0.1，即变化幅度保持不变
+            pass
+        else:##后续判断
+            if bianhua[idx]==.1:#上次变化是0.1
+                if zengda[idx]:##前一次增大
+                    pass#变化幅度保持不变
+                else:##前一次减小
+                    bianhua[idx]*=.5###幅度减半
+            else:##上次变化小于0.1
+                bianhua[idx]*=.5###幅度减半
+        diyicipanduan[idx]=False##用完了第一次判断               
+        zengda[idx]=True###增大公平系数
+        gongpingxishu[idx]+=bianhua[idx]###更新下一次迭代使用的公平系数
         return heli
     else:
-        heli=True
+        heli[idx]=True
     print("公平系数合理")
     return heli
+
 ##################################################################
 
 ####根据有多个车辆方案，对应于多个需求矩阵，这些需求矩阵都是一样的
@@ -1798,7 +1878,7 @@ rou=0.
 ###----------------------------
 ###蚂蚁匹配相关参数----------------------------
 ####设置公平系数
-gongpingxishu=[0.63,0.7]#0.9#0.63
+gongpingxishu=0.7*np.ones(len(Zclzl),dtype=float)##初始化的公平系数都为0.7
 #########手动设置参数区域#########################
 
 ###获取最短时间和路线的组合数组
@@ -1809,31 +1889,8 @@ TimeandRoute=zuiduanluxian()
 
 ##gongpingxishu需要根据mayipipei打印出来的结果进行调整。
 ##################################################################
+gongpingxishu,Mayizidian,Diyicifenpeiarr,Diyicifenpeiyuzhi,Mayipipei=gongpingxishuheli(Zfplzl,Zfpltj,Zclzl,Zcltj,gongpingxishu,CLLXtypenum,CLLXtitl,CLLXarr,XQDHZarr,WZLXHZarr,TimeandRoute)
 ####
-Fenpeixishu=abc(Zfplzl,Zfpltj,Zclzl,Zcltj,gongpingxishu)
-##print(Fenpeixishu)
-###获取蚂蚁字典的数组
-Mayizidian=mygetmayizidian(CLLXtypenum,CLLXtitl,CLLXarr,Fenpeixishu)
-##print(Mayizidian)
-####第三步：第一次分配
-###获取第一次分配的矩阵。可以分配的数量
-##print("第一次可分配数量：")
-Diyicifenpeiarr=diyicikefenpei(XQDHZarr,WZLXHZarr)
-##print(Diyicifenpeiarr)
-###获取第一次分配阈值。由体积阈值或者重量阈值确定的必须分配的数量
-##print("第一次分配阈值：")
-Diyicifenpeiyuzhi=diyicifenpeiyuzhi(Diyicifenpeiarr,Fenpeixishu)
-##print(Diyicifenpeiyuzhi)
-####获取第一次分配的路线阈值(蚂蚁与点)
-Diyiciluxianyuzhi=luxianyuzhi(Diyicifenpeiyuzhi,TimeandRoute,Fenpeixishu)
-##print(Diyiciluxianyuzhi)
-###第一次蚂蚁匹配
-Mayipipei=mayipipei(Diyiciluxianyuzhi,Mayizidian,CLLXtypenum,Fenpeixishu)
-##print(Mayipipei)
-###判断公平系数取值合理与否
-Heli=gongpingxishuheli(Mayipipei,TimeandRoute)
-###注意：如果提示公平系数不合理，请及时修改调整gongpingxishu
-##################################################################
 
 ###把用到的蚂蚁的组合类型打印出来
 Usedmayi=printusedmayi(Mayipipei,Mayizidian)
