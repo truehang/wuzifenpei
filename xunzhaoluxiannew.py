@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt #绘制图像要用到的pyplot
 import itertools
 import math
 import copy
+import os
 ##取消科学计数法https://blog.csdn.net/Andrew_jdw/article/details/82350041
 np.set_printoptions(suppress=True)
 ###################################引入模块区域##################################################################
@@ -458,6 +459,26 @@ def printall():
     for idx,x in enumerate(CLLXarr):        
         print("车辆类型表",idx+1,"\n",x)
     print("距离表\n",JLarr)
+    print('-'*50)
+    print("总需求点数：",Zxqdnum)
+    for idx,x in enumerate(Zclnum):
+        print("方案",idx+1,"的总车辆数：",Zclnum[idx])        
+    print("总需求点重量：",Zxqdzl,"总需求点体积：",Zxqdtj)
+    print("总供应量重量：",Zgylzl,"总供应量体积：",Zgyltj)
+    print("总分配量重量：",Zfplzl,"总分配量体积：",Zfpltj)
+    wuzishu=len(WZLXHZarr[0,:])###物资数量
+    lz=len(Zclnum)
+    li=0
+    while li<lz:
+        print("方案",li+1,"：总车辆重量：",Zclzl[li],"总车辆体积：",Zcltj[li])
+        li+=1
+    print("需求点物资1到物资",wuzishu,"的需求量")
+    xqllist=[int(i) for i in WZLXHZarr[2,:]]
+    print(xqllist)
+    print("配送中心物资1到物资",wuzishu,"的供应量")
+    gyllist=[int(i) for i in WZLXHZarr[3,:]]
+    print(gyllist)
+    print("进行分配时物资1到物资",wuzishu,"的可分配量")
     print("*"*10,"第一步：读取数据（结束）","*"*10)
     print("="*100)
     
@@ -1033,7 +1054,8 @@ def abc(Zfplzl,Zfpltj,Zclzl,Zcltj,gongpingxishu):###Zclzl,Zcltj是数组
         antijisuan=False
         shengyukongjianwenti=False
         if thiszlbz >= 1 and thistjbz >= 1:
-            print("非剩余空间问题")            
+            print("非剩余空间问题,请调整数据，程序已退出")
+            os._exit(0)##后面的代码都不会运行
         else:
             shengyukongjianwenti=True
             if thiszlbz > thistjbz:##重量比值更大
